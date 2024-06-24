@@ -19,10 +19,12 @@ namespace Inscripciones.Controllers
         }
 
         // GET: DetalleInscripcions
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> IndexPorInscripcion(int? idinscripcion = 1)
         {
-            var inscripcionesContext = _context.DetalleInscripciones.Include(d => d.Inscripcion).ThenInclude(d=>d.Alumno).Include(d => d.Materia);
-            return View(await inscripcionesContext.ToListAsync());
+            var inscripciones = _context.DetalleInscripciones.Include(d => d.Materia).ThenInclude(m => m.AnioCarrera).ThenInclude(a => a.Carrera).Where(d => d.InscripcionId.Equals(idinscripcion)).OrderBy(d => d.Materia.AnioCarreraId);
+            ViewData["Inscripciones"] = new SelectList(_context.Inscripciones.Include(i => i.Alumno), "Id", "Inscripto", idinscripcion);
+            ViewData["IdInscripcion"] = idinscripcion;
+            return View(await inscripciones.ToListAsync());
         }
 
         // GET: DetalleInscripcions/Details/5
@@ -46,11 +48,18 @@ namespace Inscripciones.Controllers
         }
 
         // GET: DetalleInscripcions/Create
-        public IActionResult Create()
+        public IActionResult CreateConInscripcion(int? idinscripcion = 1, int? idaniocarrera = null)
         {
-            ViewData["Inscripcion"] = new SelectList(_context.Inscripciones.Include(i=>i.Alumno), "Id", "Inscripto");
-            ViewData["Materia"] = new SelectList(_context.Materias, "Id", "Nombre");
+            ViewData["Inscripciones"] = new SelectList(_context.Inscripciones.Include(i => i.Alumno).Include(i => i.Carrera), "Id", "Inscripto", idinscripcion);
+            Inscripcion inscripcion = _context.Inscripciones.FirstOrDefault(i => i.Id == idinscripcion);
+            idaniocarrera ??= _context.AnioCarreras.Where(i => i.CarreraId == inscripcion.CarreraId).FirstOrDefault().Id;
+            ViewData["AniosCarreras"] = new SelectList(_context.AnioCarreras.Include(a => a.Carrera).Where(_i => _i.CarreraId == inscripcion.CarreraId), "Id", "AñoYCarrera", idaniocarrera);
+            ViewData["IdInscripcion"] = idinscripcion;
+            ViewData["IdAnioCarrera"] = idaniocarrera;
+            ViewData["Materias"] = new SelectList(_context.Materias.Where(m => m.AnioCarreraId.Equals(idaniocarrera)), "Id", "Nombre");
+            ViewData["DetallesInscripciones"] = _context.DetalleInscripciones.Include(d => d.Materia).ThenInclude(m => m.AnioCarrera).ThenInclude(a => a.Carrera).Where(d => d.InscripcionId.Equals(idinscripcion)).OrderBy(d => d.Materia.AnioCarreraId);
             return View();
+
         }
 
         // POST: DetalleInscripcions/Create
@@ -68,6 +77,24 @@ namespace Inscripciones.Controllers
             }
             ViewData["InscripcionId"] = new SelectList(_context.Inscripciones, "Id", "Id", detalleInscripcion.InscripcionId);
             ViewData["MateriaId"] = new SelectList(_context.Materias, "Id", "Id", detalleInscripcion.MateriaId);
+            return View(detalleInscripcion);
+        }
+
+        // POST: DetalleInscripciones/Create
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateConInscripcion([Bind("Id,ModalidadCursado,InscripcionId,MateriaId")] DetalleInscripcion detalleInscripcion)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Add(detalleInscripcion);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(IndexPorInscripcion), new { idinscripcion = detalleInscripcion.InscripcionId });
+            }
+            ViewData["InscripcionId"] = new SelectList(_context.Inscripciones.Include(i => i.Alumno), "Id", "Inscripto", detalleInscripcion.InscripcionId);
+            ViewData["MateriaId"] = new SelectList(_context.Materias, "Id", "Nombre", detalleInscripcion.MateriaId);
             return View(detalleInscripcion);
         }
 

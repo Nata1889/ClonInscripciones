@@ -17,8 +17,10 @@ namespace Inscripciones.Models
             //           MultipleActiveResultSets = True;
             //           Encrypt = false
             // ");
+            var configuration = new ConfigurationBuilder()
+             .AddJsonFile("appsettings.json").Build();
 
-            string cadenaConexion = "Server=5.57.213.17;Database=smartsof_ezeporche;User=smartsof_porche;Password=porcheeze123;";
+            string cadenaConexion = configuration.GetConnectionString("mysqlremoto"); 
                 //"Server=127.0.0.1;Database=inscripcionescontext;User=root;Password=;";
 
             optionsBuilder.UseMySql(cadenaConexion,ServerVersion.AutoDetect(cadenaConexion));
