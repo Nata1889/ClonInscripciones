@@ -32,10 +32,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
-var app = builder.Build();
-
-// Configurar una política de CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -44,6 +40,11 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
+
+var app = builder.Build();
+
+// Configurar una política de CORS
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
